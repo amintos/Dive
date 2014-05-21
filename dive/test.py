@@ -34,6 +34,14 @@ class Mock(object):
     def __init__(self, foo):
         self.foo = foo
 
+
+class MockMock(object):
+
+    def __init__(self):
+        self.foo = 42
+        self.bar = [1, 2, 3]
+        self.mock = Mock(42)
+
         
 class TestPatterns(TestUnifiable):
 
@@ -64,18 +72,17 @@ class TestPatterns(TestUnifiable):
 
     def test_attribute(self):
         m = Mock(42)
-        self.assert_unifies(Attribute('foo', Anything()), m)
+        self.assert_unifies(Attribute('foo'), m)
 
     def test_attribute_missing(self):
         m = Mock(42)
-        self.assert_fails(Attribute('bar', Anything()), m)
+        self.assert_fails(Attribute('bar'), m)
 
     def test_subtype(self):
         m = Mock(42)
         self.assert_unifies(Subtype(Mock), m)
 
     def test_wrong_subtype(self):
-        m = Mock(42)
         self.assert_fails(Subtype(Mock), 42)
 
     def test_and(self):
@@ -108,6 +115,38 @@ class TestPatterns(TestUnifiable):
 
     def test_not_or(self):
         self.assert_fails(Or(Nothing(), Nothing()), 42)
-        
 
-unittest.main()
+    def test_index(self):
+        list = [1, 2, 3]
+        v = Variable()
+
+        def continuation():
+            self.assertEqual(2, v.value)
+            self.assert_fails(Index(0) ** v, list)
+
+        self.assert_unifies(Index(1) ** v, list, continuation)
+
+    def test_pattern(self):
+        m = MockMock()
+        v1 = Variable()
+        v2 = Variable()
+
+        def continuation1():
+            self.assertEqual(2, v1.value)
+
+        def continuation2():
+            self.assertEqual(42, v2.value)
+
+        pattern1 = Attribute('bar') ** Index(1) ** v1
+        self.assert_unifies(pattern1, m, continuation1)
+
+        pattern2 = (pattern1
+                    & Attribute('foo') ** v2
+                    & Attribute('mock') ** Attribute('foo') ** v2)
+        self.assert_unifies(pattern2, m, continuation2)
+
+
+
+        
+if __name__ == '__main__':
+    unittest.main()

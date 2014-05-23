@@ -1,38 +1,15 @@
-Simple pattern matching on object structures
-============================================
+Pattern matching on composite objects
+=====================================
 
-The *dive* library allows to match finite structures inside object graphs.
+What's inside
+-------------
 
-```
-from dive import *
+The ***dive*** package provides a pattern matching facility which works directly with Python objects (think *regular expressions on object graphs*). It provides a set of basic patterns, such as matching an attribute or an object's type but also provides mechanisms of capturing matched parts of the object graph (think *variables in Prolog*). 
 
-# This is our object graph:
+As matching is non-deterministic, the API uses callbacks to signal all possible matches (and instantiations of the used *Variables*) and failure. The architecture decouples a pattern's definition, its application and the interpretation of its results.
 
-class Simple(object):
- 
-    def __init__(self, foo):
-        self.foo = foo
+How to use
+----------
 
-class Sophisticated(object):
-
-    def __init__(self, foo, bar):
-        self.foo = foo
-        self.bar = bar
- 
-object_under_test = Sophisticated(23, Simple(42))
- 
-# We want to extract some variable
-
-var = Variable()
-
-def matched():
-    # Will be called for each match
-    print var.value
-
-pattern1 = (Subtype(Sophisticated) ** Attribute('bar') ** Attribute('foo') ** var) 
-pattern2 = pattern1 | Attribute('foo') ** var
-
-pattern2.unify(object_under_test, matched)
-
-```
-
+*Under construction.*
+See the module comment in ```dive/patterns.py```

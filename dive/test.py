@@ -126,6 +126,53 @@ class TestPatterns(TestUnifiable):
 
         self.assert_unifies(Index(1) ** v, list, continuation)
 
+    def test_first(self):
+        list = [1, 2, 3, 4]
+        v = Variable()
+        matches = []
+
+        def continuation():
+            matches.append(v.value)
+
+        self.assert_unifies(First ** (If(lambda x: x < 3) & v), list, continuation)
+        self.assertListEqual(matches, [1])
+
+    def test_some(self):
+        m = MockMock()
+        v = Variable()
+        matches = []
+
+        def continuation():
+            matches.append(v.value)
+
+        self.assert_unifies(Attribute('bar') ** Some ** (If(lambda x: x < 3) & v), m, continuation)
+        self.assertListEqual(matches, [1, 2])
+
+    def test_each(self):
+        list = [1, 2, 3, 4]
+        v = Variable()
+        matches = []
+
+        def continuation():
+            matches.append(v.value)
+
+        self.assert_unifies(Each ** (If(lambda x: x >= 3) & v), list, continuation)
+        self.assertListEqual(matches, [3, 4])
+
+    def test_variable_monad(self):
+
+        v = Variable()
+        w = Variable()
+        m = MockMock()
+
+        def continuation():
+            self.assertEqual(42, v.value)
+            self.assertEqual(m.mock, w.value)
+
+        self.assert_unifies(
+            Attribute('foo') ** v & Attribute('mock') ** w ** Attribute('foo') ** v,
+            m, continuation)
+
     def test_pattern(self):
         m = MockMock()
         v1 = Variable()
@@ -144,6 +191,36 @@ class TestPatterns(TestUnifiable):
                     & Attribute('foo') ** v2
                     & Attribute('mock') ** Attribute('foo') ** v2)
         self.assert_unifies(pattern2, m, continuation2)
+
+    def test_pattern2(self):
+
+        class Simple(object):
+
+            def __init__(self, foo):
+                self.foo = foo
+
+        class Sophisticated(object):
+
+            def __init__(self, foo, bar):
+                self.foo = foo
+                self.bar = bar
+
+        object_under_test = Sophisticated(23, Simple(42))
+
+        # We want to extract some variable
+
+        var = Variable()
+
+        def matched():
+            # Will be called for each match
+            print var.value
+
+        pattern1 = (Attribute('bar') ** Attribute('foo') ** var)
+        pattern2 = pattern1 | Attribute('foo') ** var
+
+        self.assert_unifies(pattern2, object_under_test, matched)
+
+
 
 
 

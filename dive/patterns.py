@@ -1,5 +1,6 @@
-def fail_silent(term1, term2):
+def fail_silent(*_):
     pass
+
 
 class Unifiable(object):
     """Base class for continuation-passing matchers"""
@@ -8,7 +9,9 @@ class Unifiable(object):
         raise NotImplemented
 
     def bind(self, other):
-        raise NotImplemented("%s cannot be composed via ** as it does not yield new data. Use & or | for composition.")
+        raise NotImplemented(
+            "%s cannot be composed via ** as it does not yield new data." +
+            "Use & or | for composition.")
 
     def __or__(self, other):
         return Or(self, other)
@@ -25,7 +28,6 @@ class PatternMonad(Unifiable):
 
     def unify(self, value, cont, fail=fail_silent):
         self.bind(Return).unify(value, cont, fail)
-
 
 
 class Anything(Unifiable):
@@ -192,11 +194,10 @@ class MatchAll(Unifiable):
     def __init__(self, into):
         self.into = into
 
-
     def unify(self, value, cont, fail=fail_silent):
         failed_once = False
 
-        def failure(term1, term2):
+        def failure(*_):
             global failed_once
             failed_once = True
 
@@ -213,8 +214,6 @@ class MatchAll(Unifiable):
 #
 #   "Return" is used as in Haskell. It matches anything and continues.
 #
-
-
 
 
 class Attribute(PatternMonad):
@@ -284,10 +283,8 @@ First = Any(True, True)     # Match the first element
 Each = Any(False, False)    # Match just each element (including none)
 
 
-
 class All(PatternMonad):
     """Matches all elements inside collection. Fails if any does not match"""
 
     def bind(self, bind):
         return MatchAll(bind)
-

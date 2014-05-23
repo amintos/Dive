@@ -215,7 +215,7 @@ class TestPatterns(TestUnifiable):
             # Will be called for each match
             print var.value
 
-        pattern1 = (Attribute('bar') ** Attribute('foo') ** var)
+        pattern1 = (Subtype(Sophisticated) ** Attribute('bar') ** Subtype(Simple) ** Attribute('foo') ** var)
         pattern2 = pattern1 | Attribute('foo') ** var
 
         self.assert_unifies(pattern2, object_under_test, matched)

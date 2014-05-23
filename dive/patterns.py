@@ -1,3 +1,109 @@
+"""
+Composable units describing patterns.
+
+Patterns can be matched using the unify() method.
+Unify takes 3 Arguments:
+    the_object              Some structured object being matched
+    success_continuation    The method which is called for each match
+    failure_continuation    Method called when the pattern does not match
+
+    failure_continuation needs two arguments: The first being the sub-pattern
+    that caused the failure and the second being the value that did not
+    match that sub-pattern.
+
+Patterns can be combined using one of the following operations:
+
+    a & b   matches a and b. b is not evaluated if a fails.
+    a | b   matches a or b. b is not evaluated if a succeeds.
+    a ** b  matches a, passes the matched result to b.
+
+    WARNING:
+    Note that composition using ** associates to the RIGHT.
+    a ** b ** c resolves to a ** (b ** c).
+    Writing (a ** b) ** c may not work.
+
+Available patterns are:
+
+    Attribute('name'):
+        Matches an attribute. Passes its value to the next pattern with **.
+        Fails if the attribute does not exist.
+
+    Subtype(class_or_type):
+        Matches the type of an object. Passes the object to the next pattern.
+
+    Constant(value):
+        Matches exactly the given value using ==. Not composable via **.
+
+    Variable():
+        First, matches any value and stores the matched object.
+        If it is matched again, it matches against the stored object.
+        Passes the value via **.
+
+        Example:
+            var = Variable()
+            pattern = Attribute('foo') ** var
+            def cont():
+                print var.value
+            def fail():
+                print "Nothing matched"
+            pattern.unify(some_object, cont, fail)
+
+            This will print the value of some_object.foo or print
+            "Nothing matched" if some_object has no attribute "foo".
+
+        Other Example:
+
+            pattern = Attribute('foo') ** var & Attribute('bar') ** var
+
+            This pattern matches only objects with attributes foo and bar
+            being equal (As they get bound to the same variable).
+
+    First:
+        Matches elements of a collection. Proceeds with the first match along **.
+
+        Example:
+            var = Variable()
+            pattern = First ** If(lambda x: x < 3) ** var
+
+        Will match the first element in a collection which is less than 3
+        an store it in var. In contrast to Some, First will not find further matches.
+
+    Some:
+        Matches elements of a collection. Proceeds with every match.
+        Fails if nothing matched.
+
+
+    Each:
+        Matches elements of a collection. Proceeds with every match but
+        does not fail if nothing matched. This may call neither
+        a success nor a failure continuation.
+
+    All:
+        Matches all elements of a collection. Fails if any single element fails.
+        Passes the elements to the next (**) pattern.
+
+    Get(lambda x: ... ):
+        Retrieve the value computed by the given function and pass it on.
+        Fails on AttributeError, IndexError and KeyError
+
+        Example: Attribute('foo') is just syntactic sugar for Get(lambda x: x.foo).
+
+    If(lambda x: ...):
+        Checks the predicate on the given object. Proceeds with this value
+        if the predicate evaluates to True. Fails otherwise.
+
+        Example:
+            var = Variable()
+            pattern = Each ** If(lambda x: x < 3) ** var
+            patter.unify([1, 2, 3, 4], cont, fail)
+
+            will call cont twice with var.value being 1 and 2.
+
+
+"""
+
+
+
 def fail_silent(*_):
     pass
 
@@ -190,6 +296,7 @@ class MatchAny(Unifiable):
 
 
 class MatchAll(Unifiable):
+    """Match all elements of a collection. Fail if a single one fails"""
 
     def __init__(self, into):
         self.into = into
